@@ -55,9 +55,7 @@ class World:
                 await other_player.send(spawn_player)
 
         self.players.append(player)
-
-        await self.shart(player) # shart the player
-        print("sharted mudkipp")
+        
         asyncio.create_task(self._set_block_player(player))
 
     async def _finalize(self, player):
