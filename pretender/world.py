@@ -4,6 +4,7 @@ import gzip
 import io
 import struct
 import asyncio
+import random
 
 from packet import Packet
 from tools import bold, cbold
@@ -36,7 +37,25 @@ class World:
             await player.send(
                 packet.serialize(0x03, len(chunk), chunk, len(self.chunks) // (num + 1))
             )
+
         await self._finalize(player)
+
+        spawn_player = Packet("BbChhhBB")
+        spawn_player = spawn_player.serialize(
+            0x07,
+            random.randint(1, 128), # TODO: change the player id to dynamically allocate
+            player.name,
+            128 * 32, 33 * 32, 128 * 32,
+            0, 0
+        )
+
+        for other_player in self.players:
+            if other_player is not player:
+                logger.debug(f"{bold('0x07')}: Sending {cbold(player.name)} to {cbold(other_player.name)}.")
+                await other_player.send(spawn_player)
+
+        self.players.append(player)
+        
         asyncio.create_task(self._set_block_player(player))
 
     async def _finalize(self, player):
