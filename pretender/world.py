@@ -4,7 +4,7 @@ import gzip
 import io
 import struct
 import asyncio
-
+import random 
 from packet import Packet
 from tools import bold, cbold
 
@@ -36,8 +36,11 @@ class World:
             await player.send(
                 packet.serialize(0x03, len(chunk), chunk, len(self.chunks) // (num + 1))
             )
+
+        await self._spawn_player(player, 0, 0, 80, 35, 70)
         await self._finalize(player)
         asyncio.create_task(self._set_block_player(player))
+
 
     async def _finalize(self, player):
         packet = Packet("Bhhh")
@@ -75,3 +78,12 @@ class World:
         await player.send(
             packet.serialize(0x06, x, y, z, btype)
         )  # TODO: implement physics check
+
+    async def _spawn_player(self, player, yaw, pitch, *cords):
+        packet = Packet("BbChhhBB")
+
+        for p in self.players[:-1]:
+            data = packet.serialize(0x07, -1, player.name, cords[0], cords[1], cords[2], yaw, pitch)
+            await p.send(data)
+            print(p.name, " --> ", player.name)
+
