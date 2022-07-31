@@ -3,6 +3,7 @@ import gzip
 import io
 import struct
 import asyncio 
+import asyncio
 
 from packet import Packet
 from tools import bold, cbold
@@ -38,7 +39,6 @@ class World:
             await player.send(
                 packet.serialize(0x03, len(chunk), chunk, len(self.chunks) // (num + 1))
             )
-
         await self._finalize(player)
         await self._spawn_player(player)
         asyncio.create_task(self._set_block_player(player))
