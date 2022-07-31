@@ -9,11 +9,15 @@ __all__ = ("Player",)
 
 
 class Player:
-    def __init__(self, reader, writer, packetview):
+    def __init__(self, reader, writer, packetview, world):
         self.view = packetview
         self.reader = reader
         self.writer = writer
         self.is_closing = self.writer.is_closing()
+        self.spawn_data = None
+        self.world = world
+        self.id = 1
+        self.vacant = []
 
     @property
     def name(self):
@@ -27,8 +31,9 @@ class Player:
     def verification_key(self):
         return self.view["C"][1]
 
+
     @classmethod
-    async def login(cls, reader, writer):
+    async def login(cls, reader, writer, world):
         packet = Packet("BBCCB")
         identify = await reader.read(255)
         packetview = packet.deserialize(identify)
@@ -45,7 +50,7 @@ class Player:
             f"{bold('downstream(0x00)')}: {cbold(packetview['C'][0])}'s Request Accepted; moving ahead."
         )
 
-        return cls(reader, writer, packetview)
+        return cls(reader, writer, packetview, world)
 
     async def loop(self):
         packet = Packet("B")

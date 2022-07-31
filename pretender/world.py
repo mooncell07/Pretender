@@ -1,19 +1,16 @@
-__all__ = ("World",)
 import logging
 import gzip
 import io
 import struct
-import asyncio
-<<<<<<< HEAD
-import random 
-=======
-import random
+import asyncio 
 
->>>>>>> 1c7966fdd128aea0bf54d679e85ef0cd4c91c73b
 from packet import Packet
 from tools import bold, cbold
 
 logger = logging.getLogger(__name__)
+
+
+__all__ = ("World",)
 
 
 class World:
@@ -42,28 +39,8 @@ class World:
                 packet.serialize(0x03, len(chunk), chunk, len(self.chunks) // (num + 1))
             )
 
-
-        await self._spawn_player(player, 0, 0, 80, 35, 70)
-
-
         await self._finalize(player)
-
-        spawn_player = Packet("BbChhhBB")
-        spawn_player = spawn_player.serialize(
-            0x07,
-            random.randint(1, 128), # TODO: change the player id to dynamically allocate
-            player.name,
-            128 * 32, 33 * 32, 128 * 32,
-            0, 0
-        )
-
-        for other_player in self.players:
-            if other_player is not player:
-                logger.debug(f"{bold('0x07')}: Sending {cbold(player.name)} to {cbold(other_player.name)}.")
-                await other_player.send(spawn_player)
-
-        self.players.append(player)
-        
+        await self._spawn_player(player)
         asyncio.create_task(self._set_block_player(player))
 
 
@@ -104,11 +81,20 @@ class World:
             packet.serialize(0x06, x, y, z, btype)
         )  # TODO: implement physics check
 
-    async def _spawn_player(self, player, yaw, pitch, *cords):
+    async def _spawn_player(self, player):
         packet = Packet("BbChhhBB")
+        payload = packet.serialize(
+            0x07,
+            player.id, # TODO: change the player id to dynamically allocate
+            player.name,
+            128 * 32, 33 * 32, 128 * 32,
+            0, 0
+        )
+        player.spawn_data = payload
 
-        for p in self.players[:-1]:
-            data = packet.serialize(0x07, -1, player.name, cords[0], cords[1], cords[2], yaw, pitch)
-            await p.send(data)
-            print(p.name, " --> ", player.name)
+        for p in self.players:
+            if p is not player:
+                logger.debug(f"{bold('0x07')}: Sending {cbold(player.name)} to {cbold(p.name)}.")
+                await p.send(payload)
+                await player.send(p.spawn_data)
 

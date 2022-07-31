@@ -27,11 +27,14 @@ class Server:
         self.world.make()
 
     async def __call__(self, reader, writer):
-        player = await Player.login(reader, writer)
+        player = await Player.login(reader, writer, self.world)
         self.world.players.append(player)
 
         asyncio.create_task(player.loop())
         await self.world.send_chunks(player)
+
+    def assign_id(self):
+        return len(self.world.players) + 1
 
     async def global_disconnect(self):
         for player in self.world.players:
